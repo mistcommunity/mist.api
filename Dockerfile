@@ -7,11 +7,11 @@ RUN apt update && \
     libmemcached-dev procps netcat wget curl jq inetutils-ping && \
     rm -rf /var/lib/apt/lists/*
 
-RUN wget https://dl.influxdata.com/influxdb/releases/influxdb-1.8.4-static_linux_amd64.tar.gz && \
-    tar xvfz influxdb-1.8.4-static_linux_amd64.tar.gz && rm influxdb-1.8.4-static_linux_amd64.tar.gz
+RUN cd /usr/local/bin/ && \
+    wget https://download.influxdata.com/influxdb/releases/influxdb-1.11.8-linux-amd64.tar.gz && \
+    tar xvf influxdb-1.11.8-linux-amd64.tar.gz && rm influxdb-1.11.8-linux-amd64.tar.gz
 
-RUN ln -s /influxdb-1.8.4-1/influxd /usr/local/bin/influxd && \
-    ln -s /usr/bin/pip3 /usr/bin/pip && \
+RUN ln -s /usr/bin/pip3 /usr/bin/pip && \
     ln -s /usr/bin/python3 /usr/bin/python
 
 # Download VictoriaMetrics promql middleware .so file
