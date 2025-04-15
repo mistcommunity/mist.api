@@ -33,6 +33,7 @@ COPY paramiko /mist.api/paramiko
 COPY libcloud /mist.api/libcloud
 COPY v2 /mist.api/v2
 
+RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r /mist.api/requirements.txt
 RUN pip install -e paramiko/ --config-setting editable_mode=compat
 RUN pip install -e libcloud/
