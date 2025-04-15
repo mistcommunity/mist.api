@@ -1,6 +1,6 @@
 [submodule "libcloud"]
 	path = libcloud
-	url = ../libcloud.git
+	url = https://github.com/apache/libcloud.git
 [submodule "paramiko"]
 	path = paramiko
 	url = ../paramiko.git
