@@ -1,10 +1,10 @@
-FROM python:3.7-slim-buster
+FROM python:3.12-slim-bullseye
 
 # Install libvirt which requires system dependencies.
 RUN apt update && \
     apt install -y git build-essential g++ gcc cargo gnupg ca-certificates \
-    libssl-dev libffi-dev libvirt-dev libxml2-dev libxslt-dev zlib1g-dev \
-    mongo-tools libmemcached-dev procps netcat wget curl jq && \
+    libssl-dev libffi-dev libvirt-dev libxml2-dev libxslt1-dev zlib1g-dev \
+    libmemcached-dev procps netcat wget curl jq && \
     rm -rf /var/lib/apt/lists/*
 
 RUN wget https://dl.influxdata.com/influxdb/releases/influxdb-1.8.4-static_linux_amd64.tar.gz && \
@@ -19,13 +19,13 @@ RUN wget -O promql_middleware.so "https://github.com/mistcommunity/misc/raw/refs
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --upgrade setuptools && \
-    pip install libvirt-python==7.2.0 uwsgi==2.0.19.1 && \
+    pip install libvirt-python uwsgi && \
     pip install --no-cache-dir ipython ipdb flake8 pytest pytest-cov
 
 # Remove `-frozen` to build without strictly pinned dependencies.
-COPY requirements-frozen.txt /mist.api/requirements.txt
-COPY requirements-frozen.txt /requirements-frozen-mist.api.txt
-COPY requirements.txt /requirements-mist.api.txt
+COPY requirements.txt /mist.api/requirements.txt
+#COPY requirements-frozen.txt /requirements-frozen-mist.api.txt
+#COPY requirements.txt /requirements-mist.api.txt
 
 WORKDIR /mist.api/
 
@@ -33,11 +33,11 @@ COPY paramiko /mist.api/paramiko
 COPY libcloud /mist.api/libcloud
 COPY v2 /mist.api/v2
 
-RUN pip install --no-cache-dir -r /mist.api/requirements.txt && \
-    pip install -e paramiko/ && \
-    pip install -e libcloud/ && \
-    pip install -e v2/ && \
-    pip install --no-cache-dir -r v2/requirements.txt
+RUN pip install --no-cache-dir -r /mist.api/requirements.txt
+RUN pip install -e paramiko/ --config-setting editable_mode=compat
+RUN pip install -e libcloud/
+RUN pip install -e v2/
+RUN pip install --no-cache-dir -r v2/requirements.txt --config-setting editable_mode=compat
 
 COPY . /mist.api/
 
