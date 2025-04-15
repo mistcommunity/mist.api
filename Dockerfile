@@ -34,7 +34,8 @@ COPY paramiko /mist.api/paramiko
 COPY lc /mist.api/lc
 COPY v2 /mist.api/v2
 
-RUN pip install --no-cache-dir -r /mist.api/requirements.txt && \
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r /mist.api/requirements.txt && \
     pip install -e paramiko/ && \
     pip install -e lc/ && \
     pip install -e v2/ && \
