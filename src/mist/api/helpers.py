@@ -1232,17 +1232,13 @@ def es_client(asynchronous=False):
     if not asynchronous:
         return Elasticsearch(
             config.ELASTICSEARCH['elastic_host'],
-            port=config.ELASTICSEARCH['elastic_port'],
             http_auth=(config.ELASTICSEARCH['elastic_username'],
                        config.ELASTICSEARCH['elastic_password']),
-            use_ssl=config.ELASTICSEARCH['elastic_use_ssl'],
             verify_certs=config.ELASTICSEARCH['elastic_verify_certs'],
         )
     else:
-        method = 'https' if config.ELASTICSEARCH['elastic_use_ssl'] else 'http'
         return AsyncElasticsearch(
             config.ELASTICSEARCH['elastic_host'],
-            port=config.ELASTICSEARCH['elastic_port'], method=method,
         )
 
 

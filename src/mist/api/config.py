@@ -115,11 +115,9 @@ BACKUP = {
 }
 
 ELASTICSEARCH = {
-    'elastic_host': 'elasticsearch',
-    'elastic_port': '9200',
+    'elastic_host': 'http://localhost:9200',
     'elastic_username': '',
     'elastic_password': '',
-    'elastic_use_ssl': False,
     'elastic_verify_certs': False
 }
 
