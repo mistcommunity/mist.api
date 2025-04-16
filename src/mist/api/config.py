@@ -12,7 +12,7 @@ import urllib.parse
 
 import libcloud.security
 from libcloud.compute.types import NodeState
-from libcloud.container.base import ClusterState
+# from libcloud.container.base import ClusterState
 from libcloud.container.types import Provider as Container_Provider
 from libcloud.compute.types import Provider
 
@@ -1521,10 +1521,11 @@ STATES = {
     NodeState.NORMAL.value: 'normal',
     # The following are pod states returned by the Kubernetes API
     # https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#pod-phase  # noqa
-    NodeState.SUCCEEDED: 'succeeded',
-    NodeState.FAILED: 'failed',
+    #NodeState.SUCCEEDED: 'succeeded',
+    #NodeState.FAILED: 'failed',
 }
 
+"""
 CLUSTER_STATES = [
     ClusterState.RUNNING.value,
     ClusterState.STARTING.value,
@@ -1545,6 +1546,7 @@ CLUSTER_STATES = [
     'error',
     'degraded'
 ]
+"""
 
 HELM_DOCKER_IMAGE = "alpine/helm:3.8.1"
 HELM_DOCKER_IMAGE_WORKDIR = "/apps"
@@ -2585,12 +2587,7 @@ SUPPORTED_PROVIDERS = [
             },
         ]
     },
-    # Softlayer
-    {
-        'title': 'SoftLayer',
-        'provider': Provider.SOFTLAYER,
-        'regions': []
-    },
+
     # Docker
     {
         'title': 'Docker',
@@ -2608,12 +2605,6 @@ SUPPORTED_PROVIDERS = [
     {
         'title': 'KVM (via libvirt)',
         'provider': Provider.LIBVIRT,
-        'regions': []
-    },
-    # HostVirtual
-    {
-        'title': 'HostVirtual',
-        'provider': Provider.HOSTVIRTUAL,
         'regions': []
     },
     # Vultr
@@ -3367,7 +3358,7 @@ if USAGE_SURVEY:
     }
 if GC_SCHEDULERS:
     _schedule['gc-schedulers'] = {
-        'task': 'mist.api.portal.tasks.gc_schedulers',
+        'task': 'mist.api.portal.tasks.gc_tasks_schedulers',
         'schedule': datetime.timedelta(hours=24),
     }
 if GC_SESSIONS:
