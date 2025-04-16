@@ -1,9 +1,6 @@
 [submodule "libcloud"]
 	path = libcloud
 	url = https://github.com/apache/libcloud.git
-[submodule "paramiko"]
-	path = paramiko
-	url = https://github.com/paramiko/paramiko.git
 [submodule "v2"]
 	path = v2
 	url = ../mist-api-v2.git
