@@ -7,10 +7,10 @@ RUN apt update && \
     libmemcached-dev procps netcat wget curl jq && \
     rm -rf /var/lib/apt/lists/*
 
-RUN wget https://dl.influxdata.com/influxdb/releases/influxdb-1.8.4-static_linux_amd64.tar.gz && \
-    tar xvfz influxdb-1.8.4-static_linux_amd64.tar.gz && rm influxdb-1.8.4-static_linux_amd64.tar.gz
+RUN wget https://dl.influxdata.com/influxdb/releases/influxdb2-2.7.11_linux_amd64.tar.gz && \
+    tar xvfz influxdb2-2.7.11_linux_amd64.tar.gz && rm influxdb2-2.7.11_linux_amd64.tar.gz
 
-RUN ln -s /influxdb-1.8.4-1/influxd /usr/local/bin/influxd && \
+RUN ln -s /influxdb2-2.7.11/usr/bin/influxd /usr/local/bin/influxd && \
     ln -s /usr/bin/pip3 /usr/bin/pip && \
     ln -s /usr/bin/python3 /usr/bin/python
 
