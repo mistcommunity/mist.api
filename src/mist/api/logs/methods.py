@@ -370,16 +370,16 @@ def get_events(auth_context, owner_id='', user_id='', event_type='', action='',
 
     # Query Elasticsearch.
     try:
-        result = es().search(index=index, doc_type=event_type, body=query)
+        result = es().search(index=index, body=query)
     except eexc.NotFoundError as err:
-        log.error('Error %s during ES query: %s', err.status_code, err.info)
-        raise NotFoundError(err.error)
+        log.error('Error during ES query: %s', err)
+        raise NotFoundError(err)
     except (eexc.RequestError, eexc.TransportError) as err:
-        log.error('Error %s during ES query: %s', err.status_code, err.info)
-        raise BadRequestError(err.error)
+        log.error('Error during ES query: %s', err)
+        raise BadRequestError(err)
     except (eexc.ConnectionError, eexc.ConnectionTimeout) as err:
-        log.error('Error %s during ES query: %s', err.status_code, err.info)
-        raise ServiceUnavailableError(err.error)
+        log.error('Error during ES query: %s', err)
+        raise ServiceUnavailableError(err)
 
     for hit in result['hits']['hits']:
         event = hit['_source']
@@ -522,13 +522,12 @@ def get_stories(story_type='', owner_id='', user_id='', sort_order=-1, limit=0,
     # Fetch stories. Invoke callback to process and return results.
     def _on_request_callback(query):
         if not tornado_async:
-            result = es().search(index=index, doc_type=TYPES.get(story_type),
+            result = es().search(index=index, 
                                  body=query)
             return _on_stories_callback(result)
         else:
             es(tornado_async).search(index=index,
                                      body=json.dumps(query),
-                                     doc_type=TYPES.get(story_type),
                                      callback=_on_stories_callback)
 
     # Process aggregation results in order to be applied as filters.
