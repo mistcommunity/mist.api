@@ -219,7 +219,7 @@ class Owner(me.Document):
             if isinstance(self.alerts_email, string_types):
                 emails = []
                 for email in self.alerts_email.split(','):
-                    if re.match("[^@]+@[^@]+\.[^@]+", email):
+                    if re.match(r"[^@]+@[^@]+\.[^@]+", email):
                         emails.append(email.replace(' ', ''))
                 self.emails = emails
         super(Owner, self).clean()
@@ -687,7 +687,7 @@ class Organization(Owner):
                 elif team.name == 'Owners':
                     raise me.ValidationError(
                         'RBAC Mappings are not intended for Team Owners')
-                elif len(mappings) is not 2:
+                elif len(mappings) != 2:
                     raise me.ValidationError(
                         'RBAC Mappings have not been properly initialized for '
                         'Team %s' % team)

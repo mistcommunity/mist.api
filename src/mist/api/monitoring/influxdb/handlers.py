@@ -159,7 +159,7 @@ class BaseStatsHandler(object):
                 if data.status_code == 400:
                     raise BadRequestError()
                 raise ServiceUnavailableError()
-            if callback is not None:
+            if callback != None:
                 return callback(self._on_stats_callback(data.json()))
             return self._on_stats_callback(data.json())
 
@@ -213,7 +213,7 @@ class BaseStatsHandler(object):
         if len(fields) > 1:
             for tag in fields[:-1]:
                 tag = tag.split('=')
-                if len(tag) is not 2:
+                if len(tag) != 2:
                     log.error('%s got unexpected tag: %s',
                               self.__class__.__name__, tag)
                     continue
@@ -288,7 +288,7 @@ class MainStatsHandler(BaseStatsHandler):
         if not istatus.activated_at:
             for value in results.values():
                 for point in value['datapoints']:
-                    if point[0] is not None and \
+                    if point[0] != None and \
                        int(point[1]) >= istatus.started_at:
                         if not istatus.finished_at:
                             istatus.finished_at = time.time()

@@ -80,7 +80,7 @@ __all__ = [
     'group_run_script',
     'run_script',
     'update_poller',
-    'gc_schedulers',
+    'gc_tasks_schedulers',
     'set_missing_since',
     'delete_periodic_tasks',
     'async_session_update'
@@ -1286,7 +1286,7 @@ def update_poller(org_id):
 
 
 @dramatiq.actor
-def gc_schedulers():
+def gc_tasks_schedulers():
     """Delete disabled schedules.
 
     This takes care of:
