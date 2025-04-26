@@ -129,6 +129,7 @@ class MistConnection(SockJSConnection):
         }
 
     def internal_request(self, path, params=None, callback=None):
+        """Make an internal request to the API"""
         if path.startswith('/'):
             path = path[1:]
         if isinstance(params, dict):
@@ -151,13 +152,18 @@ class MistConnection(SockJSConnection):
         headers = {'Authorization': 'internal %s %s' % (
             Portal.get_singleton().internal_api_key, self.cookie_session_id)}
 
-        tornado.httpclient.AsyncHTTPClient(
-            force_instance=True, max_clients=100).fetch(
+        client = tornado.httpclient.AsyncHTTPClient(
+            force_instance=True, max_clients=100)
+        
+        future = client.fetch(
             '%s/%s' % (config.INTERNAL_API_URL, path),
             headers=headers,
-            callback=response_callback,
-            connect_timeout=600, request_timeout=600,
+            connect_timeout=600, 
+            request_timeout=600,
         )
+        
+        if callback:
+            future.add_done_callback(lambda f: response_callback(f.result()))
 
     def __repr__(self):
         conn_dict = self.get_dict()
@@ -227,14 +233,7 @@ class OwnerUpdatesConsumer(Consumer):
     def __init__(self, main_sockjs_conn,
                  amqp_url=config.BROKER_URL):
         self.sockjs_conn = main_sockjs_conn
-        super(OwnerUpdatesConsumer, self).__init__(
-            amqp_url=amqp_url,
-            exchange='owner_%s' % self.sockjs_conn.owner.id,
-            queue='mist-socket-%d' % random.randrange(2 ** 20),
-            exchange_type='fanout',
-            exchange_kwargs={'auto_delete': True},
-            queue_kwargs={'auto_delete': True, 'exclusive': True},
-        )
+        super(OwnerUpdatesConsumer, self).__init__(amqp_url=amqp_url)
 
     def on_message(self, unused_channel, basic_deliver, properties, body):
         super(OwnerUpdatesConsumer, self).on_message(
@@ -252,16 +251,33 @@ class OwnerUpdatesConsumer(Consumer):
 class LogsConsumer(Consumer):
 
     def __init__(self, owner_id, callback, amqp_url=config.BROKER_URL):
-        super(LogsConsumer, self).__init__(
-            amqp_url=amqp_url,
-            exchange='events',
-            queue='mist-logs-%d' % random.randrange(2 ** 20),
-            exchange_type='topic',
-            routing_key='%s.*.*.*' % owner_id,
-            exchange_kwargs={'auto_delete': False},
-            queue_kwargs={'auto_delete': True, 'exclusive': True},
-        )
+        super(LogsConsumer, self).__init__(amqp_url=amqp_url)
+        self.EXCHANGE = 'events'
+        self.QUEUE = 'mist-logs-%d' % random.randrange(2 ** 20)
+        self.EXCHANGE_TYPE = 'topic'
+        self.ROUTING_KEY = '%s.*.*.*' % owner_id
+        self.exchange_kwargs = {'auto_delete': False}
+        self.queue_kwargs = {'auto_delete': True, 'exclusive': True}
         self.callback = callback
+
+    def setup_exchange(self, exchange_name):
+        """Override setup_exchange to use custom exchange type and kwargs"""
+        log.info('Declaring exchange %s', exchange_name)
+        self._channel.exchange_declare(
+            callback=self.on_exchange_declareok,
+            exchange=exchange_name,
+            exchange_type=self.EXCHANGE_TYPE,
+            **self.exchange_kwargs
+        )
+
+    def setup_queue(self, queue_name):
+        """Override setup_queue to use custom queue kwargs"""
+        log.info('Declaring queue %s', queue_name)
+        self._channel.queue_declare(
+            queue=queue_name,
+            callback=self.on_queue_declareok,
+            **self.queue_kwargs
+        )
 
     def on_message(self, unused_channel, basic_deliver, properties, body):
         super(LogsConsumer, self).on_message(

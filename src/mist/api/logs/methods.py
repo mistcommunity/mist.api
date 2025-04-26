@@ -523,13 +523,17 @@ def get_stories(story_type='', owner_id='', user_id='', sort_order=-1, limit=0,
     def _on_request_callback(query):
         if not tornado_async:
             result = es().search(index=index, doc_type=TYPES.get(story_type),
-                                 body=query)
+                               body=query)
             return _on_stories_callback(result)
         else:
-            es(tornado_async).search(index=index,
-                                     body=json.dumps(query),
-                                     doc_type=TYPES.get(story_type),
-                                     callback=_on_stories_callback)
+            # Use the _filtered_query helper which properly handles async requests
+            return _filtered_query(
+                owner_id=owner_id,
+                type=story_type,
+                callback=_on_stories_callback,
+                tornado_async=True,
+                **kwargs
+            )
 
     # Process aggregation results in order to be applied as filters.
     def _on_filters_callback(response):

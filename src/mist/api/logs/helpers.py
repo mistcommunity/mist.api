@@ -100,8 +100,15 @@ def _filtered_query(owner_id, close=None, error=None, range=None, type=None,
             return callback(result)
         return result
     else:
-        es(tornado_async).search(index=index, doc_type=TYPES.get(type),
-                                 body=json.dumps(query), callback=callback)
+        # Create a proper HTTP request for the Tornado client
+        es_client = es(tornado_async)
+        # Serialize the query to JSON before passing it to search
+        return es_client.search(
+            index=index,
+            doc_type=TYPES.get(type),
+            body=json.dumps(query),  # Convert dict to JSON string
+            callback=callback
+        )
 
 
 def _on_response_callback(response, tornado_async=False):

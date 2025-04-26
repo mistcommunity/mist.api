@@ -11,6 +11,7 @@ import pika
 from pika import adapters
 from pika.adapters.tornado_connection import TornadoConnection
 from pika.exchange_type import ExchangeType
+import tornado.ioloop
 
 LOG_FORMAT = ('%(levelname) -10s %(asctime)s %(name) -30s %(funcName) '
               '-35s %(lineno) -5d: %(message)s')
@@ -134,8 +135,11 @@ class Consumer(object):
         :param Exception reason: why the channel was closed
 
         """
-        LOGGER.warning('Channel %i was closed: %s', channel, reason)
-        self._connection.close()
+        if self._connection.is_closed:
+            LOGGER.warning('Connection is already closed, not closing again')
+        else:
+            LOGGER.warning('Channel %i was closed: %s', channel, reason)
+            self._connection.close()
 
     def on_channel_open(self, channel):
         """This method is invoked by pika when the channel has been opened.
@@ -327,10 +331,12 @@ class Consumer(object):
     def run(self):
         """Run the example consumer by connecting to RabbitMQ and then
         starting the IOLoop to block and allow the SelectConnection to operate.
-
         """
         self._connection = self.connect()
-        self._connection.ioloop.start()
+        # Get the current IOLoop instance
+        ioloop = tornado.ioloop.IOLoop.current()
+        # Add the connection to the existing IOLoop
+        ioloop.add_callback(self._connection.ioloop.start)
 
     def stop(self):
         """Cleanly shutdown the connection to RabbitMQ by stopping the consumer
@@ -346,5 +352,9 @@ class Consumer(object):
         LOGGER.info('Stopping')
         self._closing = True
         self.stop_consuming()
-        self._connection.ioloop.start()
+        # Get the current IOLoop instance
+        ioloop = tornado.ioloop.IOLoop.current()
+        # Only start the IOLoop if it's not already running
+        if not ioloop._running:
+            ioloop.start()
         LOGGER.info('Stopped')
