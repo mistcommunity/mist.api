@@ -55,8 +55,8 @@ scp
 sendgrid-python
 sentry-dramatiq
 sentry-sdk
-sockjs-tornado
-tornado
+sockjs-tornado==1.0.7
+tornado==6.2
 troposphere
 #tornado_profile
 uwsgidecorators
