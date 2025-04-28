@@ -343,8 +343,10 @@ class AzureArmStorageController(BaseStorageController):
                 raise LibcloudError("Couldn't create resource group. \
                     %s" % exc)
         kwargs['ex_resource_group'] = ex_resource_group
-        account_type = kwargs.pop('storage_account_type', 'Standard_LRS')
-        kwargs['ex_storage_account_type'] = account_type
+
+        # Map storage_account_type to ex_sku_name for Azure ARM
+        if 'storage_account_type' in kwargs:
+            kwargs['ex_sku_name'] = kwargs.pop('storage_account_type')
 
 
 class AlibabaStorageController(BaseStorageController):

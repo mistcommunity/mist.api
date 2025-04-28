@@ -184,14 +184,17 @@ def list_storage_accounts(owner, cloud_id):
     cloud = Cloud.objects.get(owner=owner, id=cloud_id, deleted=None)
     if cloud.ctl.provider in ['azure_arm']:
         conn = connect_provider(cloud)
-        accounts = conn.ex_list_storage_accounts()
+        # Use the Azure Storage Management API endpoint
+        action = "/subscriptions/%s/providers/Microsoft.Storage/storageAccounts" % conn.subscription_id
+        r = conn.connection.request(action, params={"api-version": "2021-04-01"})
+        accounts = r.object["value"]
     else:
         return []
 
     storage_accounts = []
     resource_groups = conn.ex_list_resource_groups()
     for account in accounts:
-        location_id = account.location
+        location_id = account["location"]
         location = None
         # FIXME: circular import
         from mist.api.clouds.models import CloudLocation
@@ -200,16 +203,16 @@ def list_storage_accounts(owner, cloud_id):
                                                  cloud=cloud)
         except CloudLocation.DoesNotExist:
             pass
-        r_group_name = account.id.split('resourceGroups/')[1].split('/')[0]
+        r_group_name = account["id"].split('resourceGroups/')[1].split('/')[0]
         r_group_id = ''
         for resource_group in resource_groups:
             if resource_group.name == r_group_name:
                 r_group_id = resource_group.id
                 break
-        storage_account = {'id': account.id,
-                           'name': account.name,
+        storage_account = {'id': account["id"],
+                           'name': account["name"],
                            'location': location.id if location else None,
-                           'extra': account.extra,
+                           'extra': account,
                            'resource_group': r_group_id}
         storage_accounts.append(storage_account)
 
@@ -573,7 +576,7 @@ def list_resources(auth_context, resource_type, search='', cloud='', tags='',
         only(str): The fields to load from the resource_type's document,
             comma-seperated.
         sort(str): The field to order the query results by; field may be
-            prefixed with “+” or a “-” to determine the ordering direction.
+            prefixed with "+" or a "-" to determine the ordering direction.
         start(int): The index of the first item to return.
         limit(int): Return up to this many items.
         deref(str):
@@ -710,7 +713,7 @@ def list_resources(auth_context, resource_type, search='', cloud='', tags='',
                 v = bool(distutils.util.strtobool(v))
             except ValueError:
                 v = bool(v)
-        if type(v) == str and v.lower() in ['none', 'null', '\"\"', '\'\'']:
+        if type(v) == str and v.lower() in ['none', 'null', '""', '\'\'']:
             v = None
 
         if k == 'provider' and 'cloud' in resource_type:
