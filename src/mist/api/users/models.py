@@ -220,7 +220,7 @@ class Owner(me.Document):
             if isinstance(self.alerts_email, string_types):
                 emails = []
                 for email in self.alerts_email.split(','):
-                    if re.match("[^@]+@[^@]+\.[^@]+", email):
+                    if re.match(r"[^@]+@[^@]+\.[^@]+", email):
                         emails.append(email.replace(' ', ''))
                 self.emails = emails
         super(Owner, self).clean()

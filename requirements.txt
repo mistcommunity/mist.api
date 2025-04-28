@@ -14,7 +14,7 @@ boto3
 dnspython
 dateparser
 dramatiq
-elasticsearch
+elasticsearch[async]==7.10.1
 flake8
 future
 gevent
@@ -25,7 +25,7 @@ ipython
 iso8601
 jsonpatch
 jsonpickle
-kombu
+kombu==5.4.2
 mongoengine
 mongomock
 names
