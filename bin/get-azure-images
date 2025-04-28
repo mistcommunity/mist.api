@@ -11,7 +11,7 @@ import requests
 import json
 import argparse
 
-GITHUB_URL = "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/arm-compute/quickstart-templates/aliases.json"  # noqa
+GITHUB_URL = "https://raw.githubusercontent.com/Azure/azure-rest-api-specs/main/arm-compute/quickstart-templates/aliases.json"  # noqa
 
 
 def parse_args():
