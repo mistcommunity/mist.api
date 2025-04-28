@@ -1,16 +1,16 @@
-FROM python:3.11-slim-bullseye
+FROM python:3.13-slim-bullseye
 
 # Install libvirt which requires system dependencies.
 RUN apt update && \
     apt install -y git build-essential g++ gcc cargo gnupg ca-certificates \
-    libssl-dev libffi-dev libvirt-dev libxml2-dev libxslt-dev zlib1g-dev vim \
+    libssl-dev libffi-dev libvirt-dev libxml2-dev libxslt1-dev zlib1g-dev vim \
     libmemcached-dev procps netcat wget curl jq inetutils-ping && \
     rm -rf /var/lib/apt/lists/*
 
-RUN wget https://dl.influxdata.com/influxdb/releases/influxdb-1.8.4-static_linux_amd64.tar.gz && \
-    tar xvfz influxdb-1.8.4-static_linux_amd64.tar.gz && rm influxdb-1.8.4-static_linux_amd64.tar.gz
+RUN wget https://dl.influxdata.com/influxdb/releases/influxdb2-2.7.11_linux_amd64.tar.gz && \
+    tar xvfz influxdb2-2.7.11_linux_amd64.tar.gz && rm influxdb2-2.7.11_linux_amd64.tar.gz
 
-RUN ln -s /influxdb-1.8.4-1/influxd /usr/local/bin/influxd && \
+RUN ln -s /influxdb2-2.7.11/usr/bin/influxd /usr/local/bin/influxd && \
     ln -s /usr/bin/pip3 /usr/bin/pip && \
     ln -s /usr/bin/python3 /usr/bin/python
 
@@ -20,12 +20,11 @@ RUN ln -s /influxdb-1.8.4-1/influxd /usr/local/bin/influxd && \
 
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir --upgrade setuptools && \
-    pip install libvirt-python==8.8.0 uwsgi==2.0.21 && \
+    pip install libvirt-python uwsgi && \
     pip install --no-cache-dir ipython ipdb flake8 pytest pytest-cov
 
 # Remove `-frozen` to build without strictly pinned dependencies.
-COPY requirements-frozen.txt /mist.api/requirements.txt
-COPY requirements-frozen.txt /requirements-frozen-mist.api.txt
+COPY requirements.txt /mist.api/requirements.txt
 COPY requirements.txt /requirements-mist.api.txt
 
 WORKDIR /mist.api/
@@ -34,12 +33,11 @@ COPY paramiko /mist.api/paramiko
 COPY lc /mist.api/lc
 COPY v2 /mist.api/v2
 
-RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r /mist.api/requirements.txt
-RUN pip install -e paramiko/
+RUN pip install -e paramiko/ --config-setting editable_mode=compat
 RUN pip install -e lc/
 RUN pip install -e v2/
-RUN pip install --no-cache-dir -r v2/requirements.txt
+RUN pip install --no-cache-dir -r v2/requirements.txt --config-setting editable_mode=compat
 
 COPY . /mist.api/
 
