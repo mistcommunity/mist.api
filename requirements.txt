@@ -30,6 +30,10 @@ mongoengine
 mongomock
 names
 netaddr
+
+# Make sure that this matches to paramiko version used by libcloud
+paramiko==3.4.0
+
 parse
 passlib
 pastedeploy  # Required for uwsgi paste logging, can probably be removed.
