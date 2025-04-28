@@ -3358,7 +3358,7 @@ if USAGE_SURVEY:
     }
 if GC_SCHEDULERS:
     _schedule['gc-schedulers'] = {
-        'task': 'mist.api.portal.tasks.gc_tasks_schedulers',
+        'task': 'mist.api.portal.tasks.gc_schedulers',
         'schedule': datetime.timedelta(hours=24),
     }
 if GC_SESSIONS:
