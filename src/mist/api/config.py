@@ -45,7 +45,6 @@ PORTAL_URI = "http://localhost"
 CORE_URI = ""
 LICENSE_KEY = ""
 AMQP_URI = "rabbitmq:5672"
-MEMCACHED_HOST = ["memcached:11211"]
 BROKER_URL = "amqp://guest:guest@rabbitmq/"
 INTERNAL_SOCKJS_HOST = "sockjs"
 SSL_VERIFY = True

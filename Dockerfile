@@ -4,7 +4,7 @@ FROM python:3.13-slim-bullseye
 RUN apt update && \
     apt install -y git build-essential g++ gcc cargo gnupg ca-certificates \
     libssl-dev libffi-dev libvirt-dev libxml2-dev libxslt1-dev zlib1g-dev vim \
-    libmemcached-dev procps netcat wget curl jq inetutils-ping && \
+    procps netcat wget curl jq inetutils-ping && \
     rm -rf /var/lib/apt/lists/*
 
     RUN wget https://dl.influxdata.com/influxdb/releases/influxdb-1.8.4-static_linux_amd64.tar.gz && \
