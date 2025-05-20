@@ -86,13 +86,14 @@ def push_metering_info(owner_id):
     now = datetime.datetime.utcnow()
     metering = {}
 
-    # Base InfluxDB URL.
+    # Base InfluxDB URL and headers
     url = config.INFLUX['host']
-
-    # Create database for storing metering data, if missing.
-    db = requests.post('%s/query?q=CREATE DATABASE metering' % url)
-    if not db.ok:
-        raise Exception(db.content)
+    headers = {
+        'Authorization': f'Token {config.INFLUX["token"]}',
+        'Content-Type': 'application/json'
+    }
+    org = config.INFLUX['org']
+    bucket = config.INFLUX['bucket']
 
     # CPUs
     for machine in Machine.objects(owner=owner_id, last_seen__gte=now.date(),
@@ -118,34 +119,50 @@ def push_metering_info(owner_id):
             log.error('Failed upon checks metering of %s: %r', rule.id, exc)
 
     # Datapoints
-    q = '\n'.join((
-        "SELECT SUM(partial_machine_counter) AS counter",
-        "FROM (",
-        "    SELECT MAX(counter) AS partial_machine_counter",
-        "    FROM datapoints",
-        "    WHERE owner = '{owner_id}' AND time >= now() - 30m",
-        "    GROUP BY machine,gockyId",
-        ")",
-        "GROUP BY machine",
-    )).format(owner_id=owner_id)
+    query = f'''
+    from(bucket: "{bucket}")
+        |> range(start: -30m)
+        |> filter(fn: (r) => r["owner"] == "{owner_id}")
+        |> group(columns: ["machine", "gockyId"])
+        |> max()
+        |> group()
+        |> sum()
+    '''
     try:
-        result = requests.post('%s/query?db=metering' % url,
-                               data={'q': q}).json()
-        result = result['results'][0]['series']
-        for series in result:
-            metering[owner_id]['datapoints'] += series['values'][0][-1]
+        result = requests.post(
+            f'{url}/api/v2/query?org={org}',
+            headers=headers,
+            json={'query': query}
+        ).json()
+        if result and 'results' in result:
+            for series in result['results']:
+                if series.get('series'):
+                    for value in series['series'][0].get('values', []):
+                        metering[owner_id]['datapoints'] += value[-1]
     except Exception as exc:
         log.error('Failed upon datapoints metering: %r', exc)
 
-    # Assemble points.
+    # Assemble points
     points = []
     for owner, counters in metering.items():
-        value = ','.join(['%s=%s' % (k, v) for k, v in counters.items()])
-        point = 'usage,owner=%s %s' % (owner, value)
-        points.append(point)
+        for metric, value in counters.items():
+            point = {
+                'measurement': 'usage',
+                'tags': {'owner': owner},
+                'fields': {metric: value},
+                'time': now.isoformat()
+            }
+            points.append(point)
 
-    # Write metering data.
-    data = '\n'.join(points)
-    write = requests.post('%s/write?db=metering&precision=s' % url, data=data)
-    if not write.ok:
-        log.error('Failed to write metering data: %s', write.text)
+    # Write metering data
+    if points:
+        try:
+            write = requests.post(
+                f'{url}/api/v2/write?org={org}&bucket={bucket}',
+                headers=headers,
+                data='\n'.join(str(p) for p in points)
+            )
+            if not write.ok:
+                log.error('Failed to write metering data: %s', write.text)
+        except Exception as exc:
+            log.error('Failed to write metering data: %r', exc)

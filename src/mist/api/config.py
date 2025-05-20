@@ -174,7 +174,12 @@ GOCKY_PORT = 9096
 
 # InfluxDB
 INFLUX = {
-    "host": "http://influxdb:8086", "db": "telegraf", "backup": "influxdb:8088"
+    "host": "http://influxdb:8086",
+    "org": "mist",
+    "bucket": "metering",
+    "token": "mist-token",
+    "username": "mist",
+    "password": "mist-password"
 }
 
 TELEGRAF_TARGET = ""

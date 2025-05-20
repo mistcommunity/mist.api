@@ -92,7 +92,7 @@ class BaseStatsHandler(object):
 
     group = None
 
-    influx = '%(host)s/query?db=%(db)s' % INFLUX
+    influx = '%(host)s/query?org=%(org)s&bucket=%(bucket)s' % INFLUX
 
     def __init__(self, machine):
         """Initialize self bound to `machine`."""
