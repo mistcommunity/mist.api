@@ -76,7 +76,32 @@ else:
 log = logging.getLogger(__name__)
 
 __all__ = [
-    "BaseComputeController",
+    'AlibabaComputeController',
+    'AmazonComputeController',
+    'AzureArmComputeController',
+    'AzureComputeController',
+    'BaseComputeController',
+    'CloudSigmaComputeController',
+    'DigitalOceanComputeController',
+    'DockerComputeController',
+    'EquinixMetalComputeController',
+    'GoogleComputeController',
+    'HostVirtualComputeController',
+    'KubernetesComputeController',
+    'KubeVirtComputeController',
+    'LibvirtComputeController',
+    'LinodeComputeController',
+    'LXDComputeController',
+    'MaxihostComputeController',
+    'OnAppComputeController',
+    'OpenShiftComputeController',
+    'OpenStackComputeController',
+    'OtherComputeController',
+    'RackSpaceComputeController',
+    'SoftLayerComputeController',
+    'VexxhostComputeController',
+    'VSphereComputeController',
+    'VultrComputeController',
 ]
 
 
@@ -190,26 +215,75 @@ class BaseComputeController(BaseController):
 
     """
 
-    def check_connection(self):
-        """Raise exception if we can't connect to cloud provider
+    def __init__(self, cloud):
+        """Initialize the controller with a cloud object."""
+        self.cloud = cloud
+        self._conn = None
 
-        In case of error, an instance of `CloudUnavailableError` or
-        `CloudUnauthorizedError` should be raised.
-
-        For most cloud providers, who use an HTTP API, calling `connect`
-        doesn't really establish a connection, so we also have to attempt to
-        make an actual call such as `list_machines` to verify that the
-        connection actually works.
-
-        If a subclass's `connect` not raising errors is enough to make sure
-        that establishing a connection works, then these subclasses should
-        override this method and only call `connect`.
-
-        In most cases, subclasses SHOULD NOT override or extend this method.
-
+    def _connect(self, **kwargs):
+        """Establish connection to the cloud provider.
+        
+        This method should be implemented by each specific controller.
         """
-        super(BaseComputeController, self).check_connection()
-        self._list_machines()
+        raise NotImplementedError()
+
+    def check_connection(self):
+        """Check if the connection to the cloud provider is working."""
+        if not self._conn:
+            self._connect()
+        return True
+
+    def list_machines(self, **kwargs):
+        """List all machines in the cloud."""
+        if not self._conn:
+            self._connect()
+        return self._list_machines__fetch_machines()
+
+    def list_images(self, persist=True, search=None):
+        """List all available images in the cloud."""
+        if not self._conn:
+            self._connect()
+        return self._list_images__fetch_images(search)
+
+    def list_sizes(self, persist=True):
+        """List all available machine sizes in the cloud."""
+        if not self._conn:
+            self._connect()
+        return self._list_sizes__fetch_sizes()
+
+    def list_locations(self, persist=True):
+        """List all available locations in the cloud."""
+        if not self._conn:
+            self._connect()
+        return self._list_locations__fetch_locations()
+
+    def _list_machines__fetch_machines(self):
+        """Fetch machines from the cloud provider.
+        
+        This method should be implemented by each specific controller.
+        """
+        raise NotImplementedError()
+
+    def _list_images__fetch_images(self, search=None):
+        """Fetch images from the cloud provider.
+        
+        This method should be implemented by each specific controller.
+        """
+        raise NotImplementedError()
+
+    def _list_sizes__fetch_sizes(self):
+        """Fetch sizes from the cloud provider.
+        
+        This method should be implemented by each specific controller.
+        """
+        raise NotImplementedError()
+
+    def _list_locations__fetch_locations(self):
+        """Fetch locations from the cloud provider.
+        
+        This method should be implemented by each specific controller.
+        """
+        raise NotImplementedError()
 
     def list_cached_machines(self, timedelta=datetime.timedelta(days=1)):
         """Return list of machines from database
@@ -775,7 +849,7 @@ class BaseComputeController(BaseController):
 
     def _list_machines__fetch_machines(self):
         """Perform the actual libcloud call to get list of nodes"""
-        return [node_to_dict(node) for node in self.connection.list_nodes()]
+        return [node_to_dict(node) for node in self._conn.list_nodes()]
 
     def _list_machines__get_machine_extra(self, machine, node_dict):
         """Return extra dict for libcloud node
@@ -1103,7 +1177,7 @@ class BaseComputeController(BaseController):
 
         Subclasses MAY override this method.
         """
-        return self.connection.list_images()
+        return self._conn.list_images()
 
     def _list_images__postparse_image(self, image, image_libcloud):
         """Post parse an image before returning it in list_images
@@ -1391,7 +1465,7 @@ class BaseComputeController(BaseController):
 
         Subclasses MAY override this method.
         """
-        return self.connection.list_sizes()
+        return self._conn.list_sizes()
 
     def _list_sizes__get_cpu(self, size):
         return int(size.extra.get('cpus') or 1)
@@ -1671,10 +1745,10 @@ class BaseComputeController(BaseController):
 
         """
         try:
-            return self.connection.list_locations()
+            return self._conn.list_locations()
         except:
             return [NodeLocation('', name='default', country='',
-                                 driver=self.connection)]
+                                 driver=self._conn)]
 
     def _list_locations__get_parent(self, location, libcloud_location):
         """Retrieve the parent CloudLocation object from mongo.
@@ -1774,13 +1848,13 @@ class BaseComputeController(BaseController):
         """
         # assert isinstance(machine.cloud, Machine)
         assert self.cloud == machine.cloud
-        for node in self.connection.list_nodes():
+        for node in self._conn.list_nodes():
             if node.id == machine.external_id:
                 return node
         if no_fail:
             return Node(machine.external_id, name=machine.external_id,
                         state=0, public_ips=[], private_ips=[],
-                        driver=self.connection)
+                        driver=self._conn)
         raise MachineNotFoundError(
             "Machine with external_id '%s'." % machine.external_id
         )
@@ -1828,7 +1902,7 @@ class BaseComputeController(BaseController):
         Different cloud controllers should override this private method, which
         is called by the public method `start_machine`.
         """
-        return self.connection.start_node(node)
+        return self._conn.start_node(node)
 
     def stop_machine(self, machine):
         """Stop machine
@@ -1873,7 +1947,7 @@ class BaseComputeController(BaseController):
         Different cloud controllers should override this private method, which
         is called by the public method `stop_machine`.
         """
-        return self.connection.stop_node(node)
+        return self._conn.stop_node(node)
 
     def reboot_machine(self, machine):
         """Reboot machine
@@ -2033,7 +2107,7 @@ class BaseComputeController(BaseController):
                                  ram=size.ram, disk=size.disk,
                                  bandwidth=size.bandwidth,
                                  price=size.extra.get('price'),
-                                 driver=self.connection)
+                                 driver=self._conn)
             self._resize_machine(machine, node, node_size, kwargs)
         except Exception as exc:
             raise BadRequestError('Failed to resize node: %s' % exc)
@@ -2057,7 +2131,7 @@ class BaseComputeController(BaseController):
         Different cloud controllers should override this private method, which
         is called by the public method `resize_machine`.
         """
-        self.connection.ex_resize_node(node, node_size)
+        self._conn.ex_resize_node(node, node_size)
 
     def rename_machine(self, machine, name):
         """Rename machine
@@ -2105,7 +2179,7 @@ class BaseComputeController(BaseController):
         Different cloud controllers should override this private method, which
         is called by the public method `rename_machine`.
         """
-        self.connection.ex_rename_node(node, name)
+        self._conn.ex_rename_node(node, name)
 
     def resume_machine(self, machine):
         """Resume machine
@@ -3587,9 +3661,9 @@ class BaseComputeController(BaseController):
         Subclasses MAY override this method.
         """
         if self.cloud.ctl.has_feature('container-service') is True:
-            node = self.connection.deploy_container(**kwargs)
+            node = self._conn.deploy_container(**kwargs)
         else:
-            node = self.connection.create_node(**kwargs)
+            node = self._conn.create_node(**kwargs)
         return node
 
     def _create_machine__handle_exception(self, exc, kwargs):
@@ -3643,7 +3717,7 @@ class BaseComputeController(BaseController):
             image_obj = NodeImage(cloud_image.external_id,
                                   name=cloud_image.name,
                                   extra=cloud_image.extra,
-                                  driver=self.connection)
+                                  driver=self._conn)
             return image_obj
 
     def _create_machine__get_location_object(self, location):
@@ -3661,7 +3735,7 @@ class BaseComputeController(BaseController):
                                         name=cloud_location.name,
                                         country=cloud_location.country,
                                         extra=cloud_location.extra,
-                                        driver=self.connection)
+                                        driver=self._conn)
             return location_οbj
 
     def _create_machine__get_size_object(self, size):
@@ -3686,7 +3760,7 @@ class BaseComputeController(BaseController):
                                 bandwidth=cloud_size.bandwidth,
                                 price=cloud_size.extra.get('price'),
                                 extra=cloud_size.extra,
-                                driver=self.connection)
+                                driver=self._conn)
             return size_obj
 
     def _update_metering_data(self, cached_machines, machines):
