@@ -4,12 +4,48 @@ on:
   push:
     branches:
       - master
-  # pull_request:
+  pull_request:
   workflow_dispatch:
 
 jobs:
+  validate-python:
+    name: Validate Python Code
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install mypy pyinstaller
+
+      - name: Run mypy type checking
+        run: |
+          mypy src/mist/api
+
+      - name: Compile Python files
+        run: |
+          find src/mist/api -name "*.py" -exec python -m py_compile {} \;
+
+      - name: Try PyInstaller build
+        run: |
+          cd src/mist/api
+          pyinstaller --onefile --clean --noconfirm --log-level DEBUG \
+            --hidden-import=mist.api.clouds.controllers.compute.base \
+            --hidden-import=mist.api.clouds.controllers.base \
+            --hidden-import=mist.api.concurrency.models \
+            --hidden-import=mist.api.tag.models \
+            clouds/controllers/compute/base.py
+
   build_mist_image:
     name: Build Mist Image
+    needs: validate-python
     runs-on: ubuntu-latest
     env:
       GHCR_TOKEN: ${{ secrets.GHCR_TOKEN }}
